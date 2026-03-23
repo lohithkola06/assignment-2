@@ -352,8 +352,13 @@ class Game:  # pylint: disable=too-many-instance-attributes
                 prop.is_mortgaged = False
             player.properties.clear()
             if player in self.players:
+                removed_index = self.players.index(player)
                 self.players.remove(player)
-            if self.current_index >= len(self.players):
+                if removed_index <= self.current_index:
+                    self.current_index -= 1
+            if self.players:
+                self.current_index %= len(self.players)
+            else:
                 self.current_index = 0
 
     def find_winner(self):
