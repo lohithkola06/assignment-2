@@ -61,3 +61,27 @@ class StreetRaceSystem:
     def update_skill(self, member_name: str, role: str, skill_level: int):
         """Update a crew member skill through the facade."""
         return self.crew_management.update_skill(member_name, role, skill_level)
+
+    def add_car(self, car_id: str, model: str):
+        """Add a car through the facade."""
+        return self.inventory.add_car(car_id, model)
+
+    def add_part(self, part_name: str, quantity: int):
+        """Add spare parts through the facade."""
+        return self.inventory.add_part(part_name, quantity)
+
+    def add_tool(self, tool_name: str, quantity: int = 1):
+        """Add tools through the facade."""
+        return self.inventory.add_tool(tool_name, quantity)
+
+    def add_cash(self, amount: int):
+        """Add cash through the facade."""
+        return self.inventory.add_cash(amount)
+
+    def create_race(self, race_id: str, name: str, prize_money: int):
+        """Create a race through the facade."""
+        return self.race_management.create_race(race_id, name, prize_money)
+
+    def enter_race(self, race_id: str, driver_name: str, car_id: str):
+        """Enter a driver and car into a race through the facade."""
+        return self.race_management.enter_race(race_id, driver_name, car_id)
