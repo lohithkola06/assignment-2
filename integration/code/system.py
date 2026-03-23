@@ -49,3 +49,15 @@ class StreetRaceSystem:
             self.mission_planning,
             self.crew_management,
         )
+
+    def register_member(self, name: str, role: str | None = None):
+        """Register a new crew member through the facade."""
+        return self.registration.register_member(name, role)
+
+    def assign_role(self, member_name: str, role: str, skill_level: int = 1):
+        """Assign a crew role through the facade."""
+        return self.crew_management.assign_role(member_name, role, skill_level)
+
+    def update_skill(self, member_name: str, role: str, skill_level: int):
+        """Update a crew member skill through the facade."""
+        return self.crew_management.update_skill(member_name, role, skill_level)
