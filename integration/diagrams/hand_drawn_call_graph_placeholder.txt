@@ -1,1 +1,9 @@
-Draw the final call graph by hand after reading the generated instructions file.
+The assignment asks for a hand-drawn call graph image.
+
+What to do:
+1. Open `integration/diagrams/call_graph_instructions.md`.
+2. Draw the call graph by hand using the listed module/function relationships.
+3. Take a clear photo or scan of the hand-drawn graph.
+4. Insert that image into the final submission package/report where required.
+
+This placeholder exists only so the manual drawing step is not forgotten.
