@@ -22,6 +22,8 @@ docker run --rm --name quickcart-blackbox -p 8080:8080 quickcart:latest
 python3 -m pytest blackbox/tests -v
 ```
 
+The suite contains documented `xfail` cases for defects that are externally visible in the provided QuickCart image.
+
 Optional environment variables:
 
 - `QUICKCART_BASE_URL` defaults to `http://127.0.0.1:8080`
