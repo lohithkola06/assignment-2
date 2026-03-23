@@ -129,3 +129,39 @@ class StreetRaceSystem:
     def complete_mission(self, mission_id: str):
         """Complete a mission through the facade."""
         return self.mission_planning.complete_mission(mission_id)
+
+    def create_repair_mission(
+        self,
+        mission_id: str,
+        car_id: str,
+        assigned_crew: list[str],
+        required_parts: dict[str, int] | None = None,
+        required_tools: list[str] | None = None,
+    ):
+        """Create and start a repair mission through the facade."""
+        return self.garage.create_repair_mission(
+            mission_id,
+            car_id,
+            assigned_crew,
+            required_parts=required_parts,
+            required_tools=required_tools,
+        )
+
+    def repair_car(
+        self,
+        car_id: str,
+        mechanic_name: str,
+        required_parts: dict[str, int] | None = None,
+        required_tools: list[str] | None = None,
+    ):
+        """Repair a car through the facade."""
+        return self.garage.repair_car(
+            car_id,
+            mechanic_name,
+            required_parts=required_parts,
+            required_tools=required_tools,
+        )
+
+    def leaderboard(self):
+        """Return the current leaderboard through the facade."""
+        return self.rankings_service.leaderboard()
