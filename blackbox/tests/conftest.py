@@ -254,24 +254,27 @@ def wallet_user(client: QuickCartClient, test_users: dict[str, int]) -> int:
     user_id = test_users["wallet_loyalty"]
     _, original_wallet = client.api_call("GET", "/api/v1/wallet", user_id=user_id, expected_status=200)
     yield user_id
-    _, current_wallet = client.api_call("GET", "/api/v1/wallet", user_id=user_id, expected_status=200)
-    delta = round(current_wallet["wallet_balance"] - original_wallet["wallet_balance"], 2)
-    if delta > 0:
-        client.api_call(
-            "POST",
-            "/api/v1/wallet/pay",
-            user_id=user_id,
-            json_body={"amount": delta},
-            expected_status=200,
-        )
-    elif delta < 0:
-        client.api_call(
-            "POST",
-            "/api/v1/wallet/add",
-            user_id=user_id,
-            json_body={"amount": round(-delta, 2)},
-            expected_status=200,
-        )
+    for _ in range(2):
+        _, current_wallet = client.api_call("GET", "/api/v1/wallet", user_id=user_id, expected_status=200)
+        delta = round(current_wallet["wallet_balance"] - original_wallet["wallet_balance"], 2)
+        if delta > 0:
+            client.api_call(
+                "POST",
+                "/api/v1/wallet/pay",
+                user_id=user_id,
+                json_body={"amount": delta},
+                expected_status=200,
+            )
+        elif delta < 0:
+            client.api_call(
+                "POST",
+                "/api/v1/wallet/add",
+                user_id=user_id,
+                json_body={"amount": round(-delta, 2)},
+                expected_status=200,
+            )
+        else:
+            break
 
 
 @pytest.fixture
