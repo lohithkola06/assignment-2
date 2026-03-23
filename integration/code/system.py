@@ -85,3 +85,47 @@ class StreetRaceSystem:
     def enter_race(self, race_id: str, driver_name: str, car_id: str):
         """Enter a driver and car into a race through the facade."""
         return self.race_management.enter_race(race_id, driver_name, car_id)
+
+    def record_race_result(
+        self,
+        race_id: str,
+        position: int,
+        prize_money: int | None = None,
+        car_damaged: bool = False,
+        notes: str = "",
+    ):
+        """Record a race result through the facade."""
+        return self.results.record_result(
+            race_id,
+            position,
+            prize_money=prize_money,
+            car_damaged=car_damaged,
+            notes=notes,
+        )
+
+    def create_mission(
+        self,
+        mission_id: str,
+        mission_type: str,
+        required_roles: list[str],
+        target_car_id: str | None = None,
+        required_tools: list[str] | None = None,
+        required_parts: dict[str, int] | None = None,
+    ):
+        """Create a mission through the facade."""
+        return self.mission_planning.create_mission(
+            mission_id,
+            mission_type,
+            required_roles,
+            target_car_id=target_car_id,
+            required_tools=required_tools,
+            required_parts=required_parts,
+        )
+
+    def start_mission(self, mission_id: str, assigned_crew: list[str]):
+        """Start a mission through the facade."""
+        return self.mission_planning.start_mission(mission_id, assigned_crew)
+
+    def complete_mission(self, mission_id: str):
+        """Complete a mission through the facade."""
+        return self.mission_planning.complete_mission(mission_id)
