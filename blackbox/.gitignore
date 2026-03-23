@@ -1,0 +1,11 @@
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+report.aux
+report.fdb_latexmk
+report.fls
+report.log
+report.out
+report.pdf
