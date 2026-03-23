@@ -1,8 +1,9 @@
-import sys
+"""Player state and movement logic for MoneyPoly."""
+
 from moneypoly.config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
 
 
-class Player:
+class Player:  # pylint: disable=too-many-instance-attributes
     """Represents a single player in a MoneyPoly game."""
 
     def __init__(self, name, balance=STARTING_BALANCE):
@@ -42,7 +43,6 @@ class Player:
         Awards the Go salary if the player passes or lands on Go.
         Returns the new board position.
         """
-        old_position = self.position
         self.position = (self.position + steps) % BOARD_SIZE
 
         if self.position == 0:
