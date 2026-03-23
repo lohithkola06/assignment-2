@@ -1,0 +1,216 @@
+\documentclass[12pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\setlist[itemize]{leftmargin=1.6em}
+\setlength{\parskip}{0.6em}
+\setlength{\parindent}{0pt}
+
+\title{Whitebox Testing Report for MoneyPoly}
+\author{Lohith Kola}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+In this part of the assignment, I focused only on the whitebox side of the MoneyPoly codebase. I first cleaned the code with \texttt{pylint}, then wrote deterministic \texttt{pytest} test cases based on the internal branches, state changes, and edge cases inside the code. After that, I ran the tests repeatedly, identified the defects that were actually in the source code, fixed them one by one, and kept the full history as separate commits.
+
+\section{Codebase Overview}
+The MoneyPoly program is a small command-line board game. The main gameplay logic sits in \texttt{game.py}, while the other modules split out state and helper behavior:
+
+\begin{itemize}
+  \item \texttt{bank.py}: manages bank funds, payouts, and emergency loans.
+  \item \texttt{board.py}: stores the board layout and tile lookup logic.
+  \item \texttt{cards.py}: defines Chance and Community Chest decks.
+  \item \texttt{dice.py}: handles dice rolls, totals, and doubles tracking.
+  \item \texttt{player.py}: stores player position, money, jail state, and owned properties.
+  \item \texttt{property.py}: stores property data, mortgage state, and color-group ownership checks.
+  \item \texttt{ui.py}: contains console I/O helpers.
+  \item \texttt{main.py}: acts as the entry point.
+\end{itemize}
+
+From a whitebox testing point of view, the main risk areas were game flow, money transfer rules, jail handling, ownership transitions, and state changes that depend on internal branching.
+
+\section{Control Flow Graph}
+I created the control flow graph by hand and will attach the image separately in the final submission.
+
+\section{Pylint Code Quality Analysis}
+\subsection{Approach}
+I ran \texttt{pylint} on all required source files inside the whitebox MoneyPoly folder and fixed the results iteratively instead of making one large unsafe refactor. I prioritized problems that could affect readability or reliability, such as unused imports, dead code, broad exceptions, missing final newlines, long literals, and misleading comparisons. For a few model-heavy classes such as \texttt{Game}, \texttt{Player}, and \texttt{Property}, I used narrow \texttt{pylint} suppressions for complexity-related warnings instead of forcing artificial refactors that would have made the code harder to follow.
+
+After the cleanup phase, the final pylint score for the required source set was \textbf{10.00/10}.
+
+\subsection{Main Warning Categories I Fixed}
+\begin{itemize}
+  \item Missing module, class, and function docstrings in the entry point and core modules.
+  \item Unused imports and dead local variables.
+  \item Line-length issues in the card tables.
+  \item Overly broad exception handling in the UI helper.
+  \item Superfluous comparisons and unnecessary control-flow branches.
+  \item Missing final newline and minor formatting issues.
+  \item Attribute initialization issues in the dice model.
+\end{itemize}
+
+\subsection{Pylint Iterations}
+\begin{longtable}{p{0.12\textwidth}p{0.80\textwidth}}
+\toprule
+\textbf{Iteration} & \textbf{What I changed} \\
+\midrule
+\endhead
+1 & Moved the extracted MoneyPoly source into \texttt{whitebox/code/moneypoly} and added the minimal package/test bootstrap needed for whitebox execution. \\
+2 & Added module and function docstrings in \texttt{main.py}. \\
+3 & Removed an unused import and documented the bank module and class. \\
+4 & Added a board module docstring and simplified the mortgaged-property check. \\
+5 & Reformatted the card tables into readable multi-line literals and documented the cards module. \\
+6 & Added a module docstring to the shared configuration file. \\
+7 & Initialized dice state cleanly in \texttt{\_\_init\_\_} and removed an unused import. \\
+8 & Cleaned the game module lint issues, removed unused imports, fixed small control-flow warnings, and used narrow pylint suppressions for unavoidable complexity warnings. \\
+9 & Removed dead code from the player model and documented the module. \\
+10 & Documented the property models and simplified the mortgage return path. \\
+11 & Documented the UI module and replaced the bare \texttt{except} with explicit exception handling. \\
+\bottomrule
+\end{longtable}
+
+\section{White-Box Test Design}
+\subsection{Testing Strategy}
+I wrote the tests with the source structure in mind instead of treating the program like a black box. I targeted three things in every module:
+
+\begin{itemize}
+  \item decision branches, such as unowned vs owned properties, valid vs invalid payments, jail choices, and doubles handling,
+  \item important variable states, such as balances, mortgage flags, ownership lists, jail state, turn index, and dice streaks,
+  \item edge cases, such as empty card decks, exact-balance purchases, passing Go, and bankrupt-player removal.
+\end{itemize}
+
+I also avoided fragile console-format tests. Whenever randomness or interactive input was involved, I used \texttt{monkeypatch} so the tests stayed deterministic.
+
+\subsection{Test Cases and Why They Matter}
+\subsubsection*{Bank tests}
+\begin{itemize}
+  \item \texttt{test\_collect\_and\_pay\_out\_update\_bank\_balance}: I wrote this to check the normal cash-in and cash-out path in the bank.
+  \item \texttt{test\_pay\_out\_rejects\_insufficient\_funds}: I needed this branch because the bank should fail loudly instead of silently going negative.
+  \item \texttt{test\_give\_loan\_credits\_player\_and\_reduces\_bank\_reserves}: I wrote this to verify the emergency-loan branch actually transfers funds. This test exposed a real defect.
+\end{itemize}
+
+\subsubsection*{Board tests}
+\begin{itemize}
+  \item \texttt{test\_get\_tile\_type\_handles\_special\_property\_and\_blank\_tiles}: I used this to cover the three main tile lookup outcomes.
+  \item \texttt{test\_is\_purchasable\_requires\_unowned\_and\_unmortgaged\_property}: I needed this to force the ownership and mortgage branches.
+  \item \texttt{test\_board\_ownership\_helpers\_track\_owner\_changes}: I wrote this to check that helper queries reflect state changes correctly.
+\end{itemize}
+
+\subsubsection*{Card tests}
+\begin{itemize}
+  \item \texttt{test\_draw\_cycles\_and\_peek\_preserves\_order}: I used this to verify deck cycling and non-advancing peek behavior.
+  \item \texttt{test\_cards\_remaining\_and\_repr\_handle\_empty\_deck}: I wrote this to hit the empty-deck edge case. It exposed a real crash.
+  \item \texttt{test\_reshuffle\_resets\_index}: I used this to verify the reshuffle branch resets the draw pointer properly.
+\end{itemize}
+
+\subsubsection*{Dice tests}
+\begin{itemize}
+  \item \texttt{test\_roll\_uses\_standard\_six\_sided\_bounds}: I wrote this because dice bounds are easy to get wrong and affect the whole game. This test exposed a real defect.
+  \item \texttt{test\_doubles\_streak\_increments\_and\_resets}: I needed this to cover both the doubles and non-doubles branches in the same state machine.
+  \item \texttt{test\_describe\_marks\_doubles\_and\_shows\_total}: I used this to verify the last-roll state is represented consistently.
+\end{itemize}
+
+\subsubsection*{Game flow tests}
+\begin{itemize}
+  \item \texttt{test\_handle\_jail\_turn\_using\_card\_releases\_player\_and\_moves}: I wrote this to exercise the jail-free-card branch.
+  \item \texttt{test\_handle\_jail\_turn\_paying\_fine\_deducts\_player\_balance}: I needed this because the fine-payment branch changes two balances and a jail state. It exposed a real defect.
+  \item \texttt{test\_apply\_card\_move\_to\_resolves\_destination\_property}: I used this to verify that a movement card continues into tile resolution.
+  \item \texttt{test\_apply\_card\_birthday\_collects\_only\_from\_players\_with\_enough\_cash}: I wrote this to cover the selective transfer branch in the birthday card logic.
+  \item \texttt{test\_move\_and\_resolve\_sends\_player\_to\_jail}: I needed this for the go-to-jail tile branch.
+  \item \texttt{test\_move\_and\_resolve\_handles\_railroad\_property\_branch}: I used this to force the railroad branch in the resolver.
+  \item \texttt{test\_find\_winner\_returns\_highest\_net\_worth\_player}: I wrote this because winner selection is a final-state decision that must be correct. It exposed a real defect.
+  \item \texttt{test\_play\_turn\_after\_bankruptcy\_advances\_to\_next\_survivor}: I used this to check a subtle turn-order edge case after elimination. It exposed a real defect.
+  \item \texttt{test\_play\_turn\_keeps\_same\_player\_after\_non\_terminal\_doubles}: I needed this to verify the extra-turn branch.
+  \item \texttt{test\_play\_turn\_sends\_player\_to\_jail\_after\_third\_doubles}: I wrote this to cover the three-doubles punishment branch.
+  \item \texttt{test\_apply\_card\_collects\_go\_salary\_when\_wrapping}: I used this to verify the wraparound branch in movement-card handling.
+\end{itemize}
+
+\subsubsection*{Game transaction tests}
+\begin{itemize}
+  \item \texttt{test\_game\_requires\_at\_least\_two\_players}: I wrote this because the setup path already suggested a minimum-player rule. It exposed a real defect.
+  \item \texttt{test\_buy\_property\_allows\_exact\_balance\_purchase}: I needed this exact-value edge case because boundary checks often go wrong. It exposed a real defect.
+  \item \texttt{test\_pay\_rent\_transfers\_money\_to\_owner}: I wrote this to verify both sides of a rent transfer. It exposed a real defect.
+  \item \texttt{test\_trade\_moves\_cash\_to\_seller\_and\_transfers\_property}: I used this to check that a successful trade updates both ownership and balances. It exposed a real defect.
+  \item \texttt{test\_unmortgage\_keeps\_property\_mortgaged\_when\_owner\_cannot\_pay}: I wrote this to test the failed-unmortgage edge case. It exposed a real defect.
+  \item \texttt{test\_auction\_ignores\_invalid\_bids\_and\_awards\_highest\_valid\_bid}: I needed this to cover low bid, unaffordable bid, and valid winner branches in the auction loop.
+\end{itemize}
+
+\subsubsection*{Player tests}
+\begin{itemize}
+  \item \texttt{test\_money\_operations\_reject\_negative\_amounts}: I wrote this to verify the argument-validation branches in balance updates.
+  \item \texttt{test\_move\_collects\_go\_salary\_when\_passing\_go}: I used this to check the wraparound path. It exposed a real defect.
+  \item \texttt{test\_move\_collects\_go\_salary\_when\_landing\_on\_go}: I wrote this to verify the direct-landing branch.
+  \item \texttt{test\_net\_worth\_includes\_owned\_property\_values}: I used this because rankings and standings depend on net worth. It exposed a real defect.
+  \item \texttt{test\_go\_to\_jail\_updates\_position\_and\_flags}: I wrote this to verify jail-state reset behavior.
+\end{itemize}
+
+\subsubsection*{Property tests}
+\begin{itemize}
+  \item \texttt{test\_group\_ownership\_requires\_full\_set\_for\_rent\_bonus}: I wrote this to make sure the rent bonus only applies when the full set is owned. It exposed a real defect.
+  \item \texttt{test\_complete\_group\_doubles\_rent}: I used this to verify the intended happy path after the full-set check.
+  \item \texttt{test\_mortgage\_and\_unmortgage\_toggle\_state\_and\_cost}: I wrote this to cover the mortgage/unmortgage transitions and returned amounts.
+  \item \texttt{test\_owner\_counts\_aggregate\_by\_player}: I used this to verify the property-group ownership summary branch.
+\end{itemize}
+
+\section{Test Execution Summary}
+My first full test run ended with \textbf{24 passing tests and 14 failing tests}. Those failures were useful because they were tied to genuine logic problems in the program rather than test setup mistakes.
+
+After fixing the defects one by one, the final test run finished with:
+
+\begin{itemize}
+  \item \textbf{38 tests passed}
+  \item \textbf{0 tests failed}
+\end{itemize}
+
+This gave me confidence that the main whitebox branches and state transitions in the MoneyPoly implementation were behaving correctly after the fixes.
+
+\section{Errors Found and Fixes Applied}
+\begin{longtable}{p{0.11\textwidth}p{0.34\textwidth}p{0.47\textwidth}}
+\toprule
+\textbf{Error} & \textbf{Problem found} & \textbf{How I fixed it} \\
+\midrule
+\endhead
+1 & Rent was doubling even when a player owned only part of a color group. & I changed the group-ownership check from an \texttt{any()} style condition to a true full-set check using \texttt{all()}. \\
+2 & Emergency loans increased the player's money but did not decrease bank reserves. & I made the loan path use the bank payout logic so the money now leaves the bank correctly. \\
+3 & Empty card decks crashed when \texttt{cards\_remaining()} or \texttt{\_\_repr\_\_()} was called. & I added explicit empty-deck handling that returns safe zero-state values. \\
+4 & Dice rolls only used values from 1 to 5. & I corrected both dice to roll over the full 1 to 6 range. \\
+5 & A player could choose to pay the jail fine without actually losing money. & I deducted the fine from the player before releasing them from jail. \\
+6 & Winner selection picked the player with the lowest net worth. & I changed the winner lookup from \texttt{min()} to \texttt{max()}. \\
+7 & Eliminating the current player could skip the next active player in turn order. & I adjusted \texttt{current\_index} when removing a bankrupt player so the turn rotation stays correct. \\
+8 & The game allowed a one-player session even though setup expected at least two players. & I added a validation check in the game constructor and now raise \texttt{ValueError} for fewer than two players. \\
+9 & Buying a property failed when the player had exactly the asking price. & I fixed the affordability boundary check so equal balance is allowed. \\
+10 & Rent was deducted from the visiting player but never added to the owner. & I credited the property owner during rent transfer. \\
+11 & Trades removed money from the buyer but did not pay the seller. & I added the missing cash credit to the seller during a successful trade. \\
+12 & A failed unmortgage attempt cleared the mortgage flag anyway. & I moved the affordability check before the state change so the property stays mortgaged if payment fails. \\
+13 & Passing Go without landing exactly on it did not award salary. & I updated movement logic to pay salary on wraparound as well as direct landing. \\
+14 & Net worth ignored the value of owned properties. & I updated the net-worth calculation to include property value, with mortgaged properties counted at mortgage value. \\
+\bottomrule
+\end{longtable}
+
+\section{Final Reflection}
+This whitebox phase was useful because several of the defects were not obvious from casual play. The most interesting issues were the ones caused by internal state transitions rather than visible syntax problems, especially the skipped turn after bankruptcy, the incorrect winner selection, the exact-balance purchase bug, and the rent/loan/trade money-transfer mistakes. Those are the kinds of errors that are easy to miss if I only test normal paths.
+
+I also found that writing deterministic tests with patched input and randomness made the debugging process much faster. Once the branches were isolated properly, the failures were clear and each fix could be committed cleanly on its own.
+
+\section{Reproducibility}
+I kept the whitebox execution steps simple:
+
+\begin{itemize}
+  \item install \texttt{pytest} and \texttt{pylint},
+  \item run \texttt{pylint} on the MoneyPoly files inside \texttt{whitebox/code/moneypoly},
+  \item run \texttt{python3 -m pytest whitebox/tests -q}.
+\end{itemize}
+
+I also added these commands to \texttt{whitebox/README.md} so the whitebox portion is ready to run again without extra setup work.
+
+\end{document}
