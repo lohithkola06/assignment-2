@@ -35,10 +35,12 @@ def test_get_product_by_id_matches_admin_price(
         expected_status=200,
     )
 
-    assert payload["product_id"] == product["product_id"]
-    assert payload["name"] == product["name"]
-    assert payload["price"] == product["price"]
-    assert payload["stock_quantity"] == product["stock_quantity"]
+    admin_product = client.find_product(product["product_id"])
+
+    assert payload["product_id"] == admin_product["product_id"]
+    assert payload["name"] == admin_product["name"]
+    assert payload["price"] == admin_product["price"]
+    assert payload["stock_quantity"] == admin_product["stock_quantity"]
 
 
 def test_get_invalid_product_returns_404(client: QuickCartClient, test_users: dict[str, int]) -> None:
